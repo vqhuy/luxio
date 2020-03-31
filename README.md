@@ -1,0 +1,2 @@
+# gopass
+Another password manager
