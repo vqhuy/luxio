@@ -84,7 +84,7 @@ func (s *server) CmdList(search string) (map[string][]string, error) {
 	tmp := &engine.AccountInfo{}
 	for _, item := range all {
 		domain, username := tmp.Deserialize(item)
-		if search == "*" || strings.Contains(domain, search) {
+		if search == "*" || strings.Contains(strings.ToLower(domain), strings.ToLower(search)) {
 			list[domain] = append(list[domain], username)
 		}
 	}
