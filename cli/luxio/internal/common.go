@@ -34,7 +34,8 @@ func makeFlags(cmd *cobra.Command) {
 	cmd.MarkFlagRequired("username")
 	cmd.Flags().Bool("pin", false, "Print as a PIN code")
 	cmd.Flags().Bool("plain", false, "Print as a plain, lower-case passphrase")
-	cmd.Flags().Bool("special", false, "Print as a title-case passphrase with a number and a special character")
+	cmd.Flags().Bool("special", false, "Print as a title-case passphrase with a fixed postfix")
+	cmd.Flags().Bool("password", false, "Print as a random password with a fixed postfix")
 }
 
 func luxioHomeDir() string {
@@ -92,7 +93,11 @@ func handle(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	if !pin && !plain && !special {
+	password, err := strconv.ParseBool(cmd.Flag("password").Value.String())
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !pin && !plain && !special && !password {
 		plain = true
 	}
 
@@ -138,6 +143,9 @@ func handle(cmd *cobra.Command, args []string) {
 	}
 	if special {
 		format ^= 1 << engine.WithSpecialCharacters
+	}
+	if password {
+		format ^= 1 << engine.Password
 	}
 	rwd, err := client.Finish(format, bfac, resp)
 	if err != nil {

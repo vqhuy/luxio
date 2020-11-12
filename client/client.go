@@ -8,7 +8,8 @@ import (
 var outputFormat = []int{
 	engine.PIN,
 	engine.PlainLowerCase,
-	engine.WithSpecialCharacters}
+	engine.WithSpecialCharacters,
+	engine.Password}
 
 // Start initializes the interaction with the server to a pseudo-random string
 // which will be used later to generate a human-readable password.

@@ -6,8 +6,17 @@ import (
 
 func TestGeneratePIN(t *testing.T) {
 	in := make([]byte, 32)
-	want := "7-9-3-2-7-4"
-	got := generatePIN(in)
+	want := "0-0-0-0-0-0"
+	got, _ := generatePIN(in)
+	if want != got {
+		t.Error("expect", want, "got", got)
+	}
+}
+
+func TestGeneratePassword(t *testing.T) {
+	in := make([]byte, 32)
+	want := "aaaaaaaaaaaaa#A"
+	got, _ := generatePassword(in)
 	if want != got {
 		t.Error("expect", want, "got", got)
 	}

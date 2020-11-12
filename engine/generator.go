@@ -1,10 +1,12 @@
 package engine
 
 import (
-	"encoding/binary"
+	"bytes"
+	"crypto/rand"
 	"errors"
-	"fmt"
-	"math/rand"
+	"io"
+	"math/big"
+	"strconv"
 	"strings"
 
 	"github.com/vqhuy/luxio/engine/niceware"
@@ -22,35 +24,63 @@ const (
 	// title cased, separated by `-`, with a fixed postfix `#1`.
 	// For example, `Hello-World-From-Luxio-#1`.
 	WithSpecialCharacters
+	// Password is ... password of length 13, created from the set of
+	// case-insensitive alpha-numeric (a-z, 0-9), with a fixed postfix `#A`.
+	// For example, `abcdefghij123#A`.
+	// This is used in the case that niceware generated passwords are too
+	// long for use.
+	Password
 )
 
 const (
+	PinLength   = 6
+	PwdLength   = 13
 	PwdSizeByte = 32
 )
 
 const (
-	postFix = "#1"
-	sep     = "-"
+	postFix1     = "#1"
+	postFix2     = "#A"
+	sep          = "-"
+	alphanumeric = "abcdefghijklmnopqrstuvwxyz0123456789"
 )
 
 var errInvalidSize = errors.New("Invalid size")
 var errUnsupported = errors.New("Unsupported format")
 
-// generatePIN splits a 32-byte byte array to 4 blocks and XORs
-// them together, and converts the result to an `Uint64`, which will
-// be used as a seed for `math/rand`.
-func generatePIN(in []byte) string {
-	bytes := make([]byte, 8)
-	for j := 0; j < 8; j++ {
-		for i := 0; i < 4; i++ {
-			bytes[j] ^= in[i*8+j]
-		}
+func cryptoRandInt(reader io.Reader, max int64) (int64, error) {
+	nBig, err := rand.Int(reader, big.NewInt(max))
+	if err != nil {
+		return 0, err
 	}
-	seed := binary.LittleEndian.Uint64(bytes)
-	s := rand.NewSource(int64(seed))
-	r := rand.New(s)
-	pin := fmt.Sprintf("%06d", r.Intn(1000000))
-	return strings.Join(strings.Split(pin, ""), sep)
+	return nBig.Int64(), nil
+}
+
+func generatePIN(in []byte) (string, error) {
+	reader := bytes.NewReader(in)
+	pin := ""
+	for i := 0; i < PinLength; i++ {
+		ind, err := cryptoRandInt(reader, 10)
+		if err != nil {
+			return "", err
+		}
+		pin += strconv.FormatInt(ind, 10)
+	}
+	return strings.Join(strings.Split(pin, ""), sep), nil
+}
+
+func generatePassword(in []byte) (string, error) {
+	max := int64(len(alphanumeric))
+	reader := bytes.NewReader(in)
+	token := ""
+	for i := 0; i < PwdLength; i++ {
+		ind, err := cryptoRandInt(reader, max)
+		if err != nil {
+			return "", err
+		}
+		token += string(alphanumeric[ind])
+	}
+	return token + postFix2, nil
 }
 
 func generatePassphrase(in []byte) (string, error) {
@@ -67,7 +97,7 @@ func Generate(in []byte, format int) (string, error) {
 	}
 	switch format {
 	case PIN:
-		return generatePIN(in), nil
+		return generatePIN(in)
 	case PlainLowerCase:
 		return generatePassphrase(in)
 	case WithSpecialCharacters:
@@ -75,7 +105,9 @@ func Generate(in []byte, format int) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return strings.Title(word) + sep + postFix, nil
+		return strings.Title(word) + sep + postFix1, nil
+	case Password:
+		return generatePassword(in)
 	}
 
 	return "", nil
