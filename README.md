@@ -107,9 +107,10 @@ luxio request -d "https://accounts.google.com/" -u "name@gmail.com"
 Flags:
   -d, --domain string     Domain name (an URL, a website, etc)
   -h, --help              help for request
+      --password          Print as a random password with a fixed postfix
       --pin               Print as a PIN code
       --plain             Print as a plain, lower-case passphrase
-      --special           Print as a title-case passphrase with a number and a special character
+      --special           Print as a title-case passphrase with a fixed postfix
   -u, --username string   Username or Account
 ❯❯❯ luxio request -d "domain" -u "username"
 ❯ Enter your Master Password:
